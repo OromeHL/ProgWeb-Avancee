@@ -1,0 +1,37 @@
+body
+{
+	background-color: silver;
+	margin: auto;
+	padding : auto;
+}
+
+#countdown
+{ 
+	position: relative;
+	top: 50px;
+	
+	border-radius: 20px 20px 0 0; 
+	background-color: black;
+	margin: auto;
+	width: 7em;
+	height: 7em;
+	font-size: 1em;
+	font-family: cursive;
+	color: yellow;
+	text-align : center;
+	line-height: 7em;
+}
+
+#launch
+{
+	position: relative;
+	background-color: black;
+	top: 50px;
+	margin: auto;
+	width: 7em;
+	font-family: cursive;
+	color: yellow;
+	text-align: center;
+	border: white 1px solid;
+	cursor: pointer;
+}
