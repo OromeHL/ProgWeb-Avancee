@@ -1,0 +1,16 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<meta name="author" content="Lasselin Henri">
+		<title>I like moving</title>
+
+		<link rel="stylesheet" href="style/style.css" type = "text/css"/>	
+	</head>
+	<body>
+		<div id="container">
+			<canvas WIDTH="500" HEIGHT="400" tabindex="0" id="canvas"></canvas>
+		</div>
+		<script type="text/javascript" src="script/myScript.js"></script>
+	</body>
+</html>

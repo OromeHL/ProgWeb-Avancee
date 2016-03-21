@@ -1,0 +1,68 @@
+body
+{
+	background-color: silver;
+	margin: 0;
+	padding: 0;
+}
+
+
+#container
+{
+	display: block;
+	position: relative;
+	margin: auto;
+	top: 100px;
+	height: 464px;
+	width: 500px;
+	border-style: solid; 
+	border-width: 2px;
+	
+	background-color: #86B404;
+}
+
+#sky
+{
+	display: block;
+	position: relative;
+	margin: auto;
+	width : 500px;
+	height: 64px;
+	background-color: skyblue;
+}
+
+
+#canvas
+{
+	display: block;
+	position: relative;
+	margin: auto;
+	width : 500px;
+	height: 464px;
+	top : -64px;
+}
+
+
+h3
+{
+	display: block;
+	width: 300px;
+	background-color: bisque;
+	text-align: center;
+	position: relative;
+	margin: auto;
+	top: 110px;
+	
+	border-style: solid; 
+	border-width: 2px;
+}
+
+ul
+{
+	display: block;
+	width: 250px;
+	height: 120px;
+	background-color: bisque;
+	position: relative;
+	margin: auto;
+	top: 110px;
+}
