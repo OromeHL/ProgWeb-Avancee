@@ -1,0 +1,35 @@
+body
+{
+	background-color: silver;
+	margin: 0;
+	padding: 0;
+}
+
+#launch
+{
+	position: relative;
+	background-color: black;
+	top: 30px;
+	margin: auto;
+	width: 7em;
+	font-family: cursive;
+	color: yellow;
+	text-align: center;
+	border: white 1px solid;
+	cursor: pointer;
+}
+
+
+#canvas
+{
+	display: block;
+	position: relative;
+	margin: auto;
+	width: 200px;
+	top: 50px;
+}
+
+#piece 
+{
+	display:none;
+}

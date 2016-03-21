@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<link rel="shortcut icon" href="images/favicon.ico">
+		<link rel="stylesheet" type="text/css" href="style/style1.css">
+		<title>exercice 1</title>
+	</head>
+<body>
+	<div id="carre"></div>
+	<script type="text/javascript" src="script/myScript1.js"></script>
+</body>
