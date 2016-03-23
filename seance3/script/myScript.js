@@ -355,6 +355,26 @@ function autoMoveH()
 		characterActu();
 		isTimedOut=setTimeout("animAuto=animFrame(autoMoveV)",interval);
 	}
+	else
+	{
+		isWalking = false;
+			
+		switch(characterLine)
+		{
+			case 0:
+				characterColumn=2;
+				break;
+			case 1:
+				characterColumn=2;
+				break;
+			case 2:
+				characterColumn=1;
+				break;
+			case 3:
+				characterColumn=1;
+				break;
+		}
+	}
 }
 
 function autoMoveV()
@@ -405,6 +425,26 @@ function autoMoveV()
 	{
 		characterActu();
 		isTimedOut=setTimeout("animAuto=animFrame(autoMoveH)",interval);
+	}
+	else
+	{
+		isWalking = false;
+			
+		switch(characterLine)
+		{
+			case 0:
+				characterColumn=2;
+				break;
+			case 1:
+				characterColumn=2;
+				break;
+			case 2:
+				characterColumn=1;
+				break;
+			case 3:
+				characterColumn=1;
+				break;
+		}
 	}
 }
 
