@@ -12,7 +12,7 @@ body
 	position: relative;
 	margin: auto;
 	top: 100px;
-	height: 464px;
+	height: 400px;
 	width: 500px;
 	border-style: solid; 
 	border-width: 2px;
@@ -37,7 +37,7 @@ body
 	position: relative;
 	margin: auto;
 	width : 500px;
-	height: 464px;
+	height: 400px;
 	top : -64px;
 }
 
@@ -59,11 +59,10 @@ h3
 ul
 {
 	display: block;
-	width: 260px;
+	width: 250px;
+	height: 120px;
 	background-color: bisque;
 	position: relative;
 	margin: auto;
 	top: 110px;
-	
-	font-size: 12px;
 }
