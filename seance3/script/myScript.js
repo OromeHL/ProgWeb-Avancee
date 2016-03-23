@@ -87,7 +87,7 @@ function init()	//initialisation du tableau des touches pressées
 
 //########################################################################
 //########################################################################
-//		Repérer interactions utilisateur
+//						Repérer interactions utilisateur
 //########################################################################
 //########################################################################
 
@@ -178,7 +178,7 @@ function getMousePos(canvas, evt) 	//on récupère les coordonnées du clic (par
 
 //########################################################################
 //########################################################################
-//		Changer l'univers
+//							Changer l'univers
 //########################################################################
 //########################################################################
 
@@ -276,12 +276,13 @@ function characterActu()
 
 function autoMove()
 {
-	if( diffX!=0 )	//si on doit se déplacer selon charX
+	//on effectue d'abord le déplacement le plus court
+	if( diffX!=0 && diffX>diffY)	//si on doit se déplacer selon x
 	{
 		isWalking = true;
 		isTimedOut=setTimeout("animAuto=animFrame(autoMoveH)",interval);
 	}
-	else if( diffY!=0)	//si on doit se déplacer selon charY
+	else if( diffY!=0 && diffY>diffX)	//si on doit se déplacer selon y
 	{
 		isWalking = true;
 		isTimedOut=setTimeout("animAuto=animFrame(autoMoveV)",interval);
@@ -384,11 +385,16 @@ function autoMoveV()
 		characterActu();
 		isTimedOut=setTimeout("animAuto=animFrame(autoMoveV)",interval);
 	}
+	else if( diffX!=0)
+	{
+		characterActu();
+		isTimedOut=setTimeout("animAuto=animFrame(autoMoveH)",interval);
+	}
 }
 
 //########################################################################
 //########################################################################
-//		Affichage de l'univers
+//							Affichage de l'univers
 //########################################################################
 //########################################################################
 
