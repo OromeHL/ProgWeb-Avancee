@@ -195,36 +195,52 @@ function loopGame()
 	//	THE down-arrow KEY
 	if (key == 40) 
 	{
-		if( charY<330)
+		if( charY< 422)
 		{
 			charY = charY + 10;
+		}
+		else if( charY<433 )
+		{
+			charY = 432;
 		}
 		characterLine = 2;
 	}	
 	//	THE up-arrow KEY
 	if (key == 38) 
 	{
-		if( charY>10)
+		if( charY>25)
 		{
 			charY = charY - 10;
+		}
+		else if ( charY>15 )
+		{
+			charY = 16;
 		}
 		characterLine = 3;
 	}
 	//	THE left-arrow KEY
 	if (key == 37) 
 	{
-		if( charX>-5)
+		if( charX>-7)
 		{
 			charX = charX-10;
+		}
+		else if( charX>-17)
+		{
+			charX = -16;
 		}
 		characterLine = 0;
 	}
 	//	THE right-arrow KEY
 	if (key == 39) 
 	{
-		if(charX<450)
+		if(charX< 442)
 		{
 			charX = charX + 10;
+		}
+		else if(charX< 452)
+		{
+			charX = 451;
 		}
 		characterLine = 1;
 	}
@@ -304,7 +320,7 @@ function autoMoveH()
 	
 	if(diffX > -1)	//on regarde dans quel sens on doit se déplacer
 	{
-		if(charX<450)	//si on est dans le canvas
+		if(charX<452)	//si on est dans le canvas
 		{
 			charX = charX + xStep;
 		}
@@ -316,7 +332,7 @@ function autoMoveH()
 	}
 	else
 	{
-		if( charX>-5)
+		if( charX>-10)
 		{
 			charX = charX-xStep;
 		}
@@ -357,7 +373,7 @@ function autoMoveV()
 	
 	if(diffY > -1)
 	{
-		if( charY<330)
+		if( charY<433)
 		{
 			charY = charY + yStep;
 		}
@@ -369,7 +385,7 @@ function autoMoveV()
 	}
 	else
 	{
-		if( charY>10)
+		if( charY>16)
 		{
 			charY = charY - yStep;
 		}
