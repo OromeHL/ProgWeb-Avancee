@@ -6,6 +6,8 @@ var isWalking = false;
 var pieceExists = true;
 
 var animation;
+var isTimedOut;
+
 var animFrame = window.requestAnimationFrame ||
             window.webkitRequestAnimationFrame ||
             window.mozRequestAnimationFrame    ||
@@ -13,6 +15,8 @@ var animFrame = window.requestAnimationFrame ||
             window.msRequestAnimationFrame     ||
             null ;
 
+var cancelAnimFrame = window.cancelAnimationFrame || window.mozCancelAnimationFrame;
+			
 var canvas = document.getElementById("canvas");  
 
 var rect = canvas.getBoundingClientRect();
@@ -35,8 +39,8 @@ var characterHeight=128;	//Longueur de la sélection
 var characterLine=2;		//Ligne de sélection
 var characterColumn=0;		//Colonne de sélection
 
-var charX=200;		//Abscisse de placement
-var charY=200; 		//Ordonnée de placement
+var charX=220;		//Abscisse de placement
+var charY=180; 		//Ordonnée de placement
 var width=64; 		//Largeur
 var height=64; 	//Longueur
 
@@ -83,72 +87,58 @@ function init()	//initialisation du tableau des touches pressées
 
 //########################################################################
 //########################################################################
-//						Repérer interactions utilisateur
+//		Repérer interactions utilisateur
 //########################################################################
 //########################################################################
 
 function doMouseUp(evt)
 {
-	var mousePos = getMousePos(canvas, evt);
-	
-	//on regarde les positions à atteindre
-	
-	xToReach = mousePos.x;
-	diffX = xToReach-charX;
-	
-	yToReach = mousePos.y;
-	diffY = yToReach-charY;
-	
-	
-	/* ajustement des positions à atteindre pour que le personnage soit un minimum centré */
-	
-	if(diffX > 0)
+	clearTimeout(isTimedOut);	//stop les éventuels déplacements auto en cours
+	if(!isWalking)	//si le personnage marche déjà, on ne détecte pas le clic
 	{
-		xToReach-=35;
+		var mousePos = getMousePos(canvas, evt);
+		
+		//on regarde les positions à atteindre
+		
+		xToReach = mousePos.x;		
+		yToReach = mousePos.y;		
+		
+		/* ajustement des positions à atteindre pour que le personnage soit un minimum centré sur le clic*/
+		
+		xToReach-=32;
+		yToReach-=60;
+
 		diffX = xToReach-charX;
+		diffY = yToReach-charY;
+		
+		//on commence le déplacement
+		autoMove();
 	}
-	else
-	{
-		xToReach-=30;
-	}
-	
-	if(diffY > 0)
-	{
-		yToReach-=100;
-		diffX = yToReach-charY;
-	}
-	else
-	{
-		yToReach-=90;
-	}
-	
-	//on commence le déplacement
-	autoMove();
 }
 
 function doKeyDown(e) //si une touche est pressée
 { 
+	clearTimeout(isTimedOut);	//stop les éventuels déplacements auto en cours
     if( e.keyCode>35 && e.keyCode<41)	//et que c'est une flèche
     {
      	e.preventDefault();	
 				
 		var isIn = false;	
 		
-		for(var i=0; i<4; i++)	//on vérifie si elle n'est pas déjà pressée (pour éviter de n'avoir un tableau rempli que de cette touche)
+		for(var i=0; i<tab.length; i++)	//on vérifie si elle n'est pas déjà pressée (pour éviter de n'avoir un tableau rempli que de cette touche)
 		{
 			if(e.keyCode == tab[i])
 			{
 				isIn = true;
 			}
 		}
-		
 		if(tab[0] == 0)	// si tab[0] == 0, par construction du tableau, aucune touche n'est pressée 
 		{
 			tab[0] = e.keyCode;
 		}
 		else if( isIn == false)	//sinon, si la touche n'était pas déjà pressée, on décale le tableau (pour sauvegarder les touches déjà pressées) et on enregistre la nouvelle touche pressée
 		{
-			for(var i = 3; i>=0; i--)
+			for(var i = 2; i>=0; i--)
 			{
 				tab[i+1]=tab[i];
 			}
@@ -165,14 +155,14 @@ function doKeyUp(e)		//en cas de touche relâchée
 {
 	for(var i = 0; i<4; i++)
 	{
-		if( e.keyCode == tab[i] )	//on passe la case du tableau correspondante à 0 et on décale le reste du tableau
+		if( e.keyCode == tab[i] )	//on décale le reste du tableau et la dernière case du tableau passe à 0
 		{
 			e.preventDefault();
-			tab[i]=0;
-			for(var j=i+1; j<3; j++)
+			for(var j=i+1; j<4; j++)
 			{
 				tab[j-1]=tab[j];
 			}
+			tab[tab.length-1]=0;
 		}
 	}
 }
@@ -188,7 +178,7 @@ function getMousePos(canvas, evt) 	//on récupère les coordonnées du clic (par
 
 //########################################################################
 //########################################################################
-//							Changer l'univers
+//		Changer l'univers
 //########################################################################
 //########################################################################
 
@@ -239,7 +229,7 @@ function loopGame()
 		characterLine = 1;
 	}
 	
-	if(key != 0)
+	if(key != 0 && isWalking)	//si on marche et que l'on continue de marcher
 	{
 		characterActu();
 	}
@@ -252,20 +242,19 @@ function loopGame()
 			switch(characterLine)
 			{
 				case 0:
-					characterColumn=1;
+					characterColumn=2;
 					break;
 				case 1:
-					characterColumn=1;
+					characterColumn=2;
 					break;
 				case 2:
-					characterColumn=0;
+					characterColumn=1;
 					break;
 				case 3:
-					characterColumn=0;
+					characterColumn=1;
 					break;
 			}
 			
-			characterActu();
 		}
 	}
 	
@@ -290,12 +279,12 @@ function autoMove()
 	if( diffX!=0 )	//si on doit se déplacer selon charX
 	{
 		isWalking = true;
-		autoMoveH();
+		isTimedOut=setTimeout("animAuto=animFrame(autoMoveH)",interval);
 	}
 	else if( diffY!=0)	//si on doit se déplacer selon charY
 	{
 		isWalking = true;
-		autoMoveV();
+		isTimedOut=setTimeout("animAuto=animFrame(autoMoveV)",interval);
 	}
 }
 
@@ -321,7 +310,6 @@ function autoMoveH()
 		else	//sinon, on a atteint notre destination
 		{
 			xToReach=charX;
-			diffX = xToReach-charX;
 		}
 		characterLine = 1;
 	}
@@ -334,21 +322,21 @@ function autoMoveH()
 		else
 		{
 			xToReach=charX;
-			diffX = xToReach-charX;
 		}
 		characterLine = 0;
 	}
-	
-	
-	characterActu();
+		
+	diffX = xToReach-charX;
 	
 	if( diffX!=0 )	//si on a pas atteint notre destination, on effectue à nouveau un déplacement horizontal
 	{
-		setTimeout(autoMoveH,interval);
+		characterActu();
+		isTimedOut=setTimeout("animAuto=animFrame(autoMoveH)",interval);
 	}
 	else if( diffY!=0)
 	{
-		setTimeout(autoMoveV,interval);
+		characterActu();
+		isTimedOut=setTimeout("animAuto=animFrame(autoMoveV)",interval);
 	}
 }
 
@@ -375,7 +363,6 @@ function autoMoveV()
 		else
 		{
 			yToReach=charY;
-			diffY = yToReach-charY;
 		}
 		characterLine = 2;
 	}
@@ -388,23 +375,20 @@ function autoMoveV()
 		else
 		{
 			yToReach=charY;
-			diffY = yToReach-charY;
 		}
 		characterLine = 3;
 	}
-	
-	
-	characterActu();
-	
+	diffY = yToReach-charY;
 	if( diffY!=0)
 	{
-		setTimeout(autoMoveV,interval);
+		characterActu();
+		isTimedOut=setTimeout("animAuto=animFrame(autoMoveV)",interval);
 	}
 }
 
 //########################################################################
 //########################################################################
-//							Affichage de l'univers
+//		Affichage de l'univers
 //########################################################################
 //########################################################################
 
