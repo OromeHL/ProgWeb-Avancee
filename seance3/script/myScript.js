@@ -277,12 +277,12 @@ function characterActu()
 function autoMove()
 {
 	//on effectue d'abord le déplacement le plus court
-	if( diffX!=0 && diffX>diffY)	//si on doit se déplacer selon x
+	if( diffX!=0 && Math.abs(diffX)<Math.abs(diffY))	//si on doit se déplacer selon x
 	{
 		isWalking = true;
 		isTimedOut=setTimeout("animAuto=animFrame(autoMoveH)",interval);
 	}
-	else if( diffY!=0 && diffY>diffX)	//si on doit se déplacer selon y
+	else if( diffY!=0 && Math.abs(diffY)<Math.abs(diffX))	//si on doit se déplacer selon y
 	{
 		isWalking = true;
 		isTimedOut=setTimeout("animAuto=animFrame(autoMoveV)",interval);
