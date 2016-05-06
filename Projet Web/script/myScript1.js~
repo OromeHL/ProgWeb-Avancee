@@ -1,0 +1,870 @@
+var animFrame = window.requestAnimationFrame ||
+            window.webkitRequestAnimationFrame ||
+            window.mozRequestAnimationFrame    ||
+            window.oRequestAnimationFrame      ||
+            window.msRequestAnimationFrame     ||
+            null ;
+
+var tics = 0;
+var _timeToBeAlive = 15;
+
+
+//Canvas
+var divArena;
+var canArena;
+var conArena;
+var ArenaWidth = 700;
+var ArenaHeight = 600;
+
+
+/*gestion du jeu*/
+var nbEnemy = 0;
+
+/* gestion du son*/
+
+var soundGame = true;
+var soundEffect = true;
+
+var animation;
+var isTimedOut;
+
+var cancelAnimFrame = window.cancelAnimationFrame || window.mozCancelAnimationFrame;
+
+var replay = document.getElementById("replay");
+var repeatedImg = document.getElementById("repeatedImg");
+
+var audioTrack = document.getElementById("audioTrack");
+var musique = document.getElementById("musique");
+var musicImg = document.getElementById("musicImg");
+
+var son = document.getElementById("son");
+var soundImg = document.getElementById("soundImg");
+
+
+audioTrack.volume=0.4;
+musique.addEventListener('mouseup',muteMusic,false);
+
+
+var tab=[];
+var space=false;
+var key=0;
+
+
+//########################################################################
+//########################################################################
+//						Repérer interactions utilisateur
+//########################################################################
+//########################################################################
+
+
+function doKeyDown(e) //si une touche est pressée
+{ 
+    if( e.keyCode>35 && e.keyCode<41)	//et que c'est une flèche
+    {
+     	e.preventDefault();	
+				
+		var isIn = false;	
+		
+		for(var i=0; i<tab.length; i++)	//on vérifie si elle n'est pas déjà pressée (pour éviter de n'avoir un tableau rempli que de cette touche)
+		{
+			if(e.keyCode == tab[i])
+			{
+				isIn = true;
+			}
+		}
+		if(tab[0] == 0)	// si tab[0] == 0, par construction du tableau, aucune touche n'est pressée 
+		{
+			tab[0] = e.keyCode;
+		}
+		else if( isIn == false)	//sinon, si la touche n'était pas déjà pressée, on décale le tableau (pour sauvegarder les touches déjà pressées) et on enregistre la nouvelle touche pressée
+		{
+			for(var i = 2; i>=0; i--)
+			{
+				tab[i+1]=tab[i];
+			}
+			tab[0] = e.keyCode;
+		}
+		
+	}
+	
+	else if(e.keyCode === 32)
+	{
+		e.preventDefault();	
+		space = true;
+	}
+    //Space is 32, Enter is 13, Tab is 9, esc is 27, backspace is 8... 
+    // A to Z is 65 to 90
+}
+
+function doKeyUp(e)		//en cas de touche relâchée
+{
+	if( e.keyCode>35 && e.keyCode<41)
+	{
+		for(var i = 0; i<4; i++)
+		{
+			if( e.keyCode == tab[i] )	//on décale le reste du tableau et la dernière case du tableau passe à 0
+			{
+				e.preventDefault();
+				for(var j=i+1; j<4; j++)
+				{
+					tab[j-1]=tab[j];
+				}
+				tab[tab.length-1]=0;
+			}
+		}
+	}
+	else if( e.keyCode === 32)
+	{
+		e.preventDefault();	
+		space = false;
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function evalSpeed(enemyType)
+{
+	var randSpeed;
+	var coef;
+	switch(enemyType)
+	{
+		case 0:
+			coef = 2;
+			break;
+		case 1:
+			coef = 3;
+			break;
+		case 2:
+			coef = 4;
+			break;
+		case 3:
+			coef = 4;
+			break;
+		case 4:
+			coef = 5;
+			break;
+		case 5:
+			coef = 7;
+			break;
+	}
+		
+	if( Math.random()>=0.5)
+	{
+		randSpeed = 1;
+	}
+	else
+	{
+		randSpeed = -1;
+	}
+	randSpeed *= (coef + Math.random()*2-1);
+
+	return randSpeed;
+}
+
+
+// une collection de projectiles
+function ProjectileSet(tabTarget)
+{
+	this.tabTarget = tabTarget;
+	this.score = 0;
+	this.tabProjectiles = new Array();
+	this.add = function (projectile) 
+	{
+		this.tabProjectiles.push(projectile);  
+	};
+	this.remove = function () 
+	{  
+	   this.tabProjectiles.map(
+							   function(obj,index,array)
+							   {
+									if(obj.exists == false ||obj.x >ArenaWidth || obj.x<0)
+									{
+					function clearScore() {
+    conScore.clearRect(0,0,300,50);
+}
+function drawScore() {
+    conScore.fillText("life : "+player.nbOfLives, 10, 25);
+    conScore.fillText("score : "+player.projectileSet.score, 150,25);
+}					  delete array[index];
+									}
+							   });
+
+	};
+
+	this.update = function()
+	{
+		this.remove();
+		var score = 0;
+		this.tabProjectiles.map(
+								function(obj)
+								{
+									obj.update();
+									if(obj.exists == false) //hit
+									{
+										score = score +1;
+									}
+								});
+		this.score = this.score + score;
+	};
+	
+	this.clear = function()
+	{
+		this.tabProjectiles.map(
+								function(obj)
+								{
+									 obj.clear();
+								});
+	};
+	
+	this.draw = function()
+	{
+		this.tabProjectiles.map(function(obj){
+			obj.draw();
+	});
+	 //console.log(this.tabProjectiles.length);
+	};
+
+};
+
+function Projectile(evilness,x,y,xSpeed,ySpeed,dir,width,height) //evilness : 0 hero, 1 ennemi ;dir : 0 horizontal, 1 vertical
+{
+	this.evilness = evilness;
+	this.x = x;
+    this.y = y;
+	this.dir = dir;
+    this.xSpeed = xSpeed;
+	this.ySpeed = ySpeed;
+	
+	this.img = new Image();
+	
+	
+	if(this.evilness ===0)
+	{
+		this.img.src="./images/attaqueHero.png";
+		
+		if(this.dir === 0)
+		{
+			if(this.xSpeed > 0)
+			{
+				this.xSprite = 0;
+				this.ySprite = 8;
+				this.hSprite = 10;
+				this.wSprite = 6;
+			}
+			else
+			{
+				this.xSprite = 8;
+				this.ySprite = 8;
+				this.hSprite = 10;
+				this.wSprite = 6;
+			}
+		}
+		else
+		{
+			if(this.ySpeed > 0)
+			{
+				this.xSprite = 2;
+				this.ySprite = 20;
+				this.hSprite = 6;
+				this.wSprite = 10;
+			}
+			else
+			{
+				this.xSprite = 2;
+				this.ySprite = 0;
+				this.hSprite = 6;
+				this.wSprite = 10;
+			}
+		}
+
+	}
+	else
+	{
+		this.img.src = "./images/attaque.png";
+		this.xSprite = 0;
+		this.ySprite = 0;
+		this.hSprite = 32;
+		this.wSprite = 34;
+	}
+
+	this.width = width;
+    this.height = height;
+
+    this.exists = true;
+    this.collision = function(tabOfObjects)
+	{
+        var hits = null;
+        var index;
+        for(index in tabOfObjects){
+            if ((tabOfObjects[index].cptExplosion ==0) 
+				&& this.x < tabOfObjects[index].x + tabOfObjects[index].width 
+				&& this.x + this.width > tabOfObjects[index].x 
+				&& this.y < tabOfObjects[index].y + tabOfObjects[index].height
+				&& this.height + this.y > tabOfObjects[index].y) 
+			{
+                    // collision detected!
+                    hits = tabOfObjects[index];
+                    break;
+            }
+        }
+        return hits;  
+    };
+    
+    this.draw = function()
+	{
+        if(this.exists)
+		{           
+			conArena.drawImage(this.img,this.xSprite,this.ySprite,this.wSprite,this.hSprite,this.x,this.y,this.width,this.height);
+        }
+    };
+    this.clear = function()
+	{
+        if(this.exists)
+		{
+            conArena.clearRect(this.x-1,this.y-1,this.width+2,this.height+2);
+        }
+    };
+    this.update = function()
+	{
+        if(this.exists)
+		{
+            this.x += this.xSpeed ;
+			this.y += this.ySpeed;
+            var tmp = this.collision([player].concat(enemies.tabEnemies));
+            if(tmp != null)
+			{
+                tmp.explodes();
+                this.exists = false;
+            } 
+        }
+    };
+}
+
+// Enemy
+var enemies = {
+    init : function()
+	{
+        this.tabEnemies = new Array();
+    },
+    add : function (enemy) 
+	{
+        this.tabEnemies.push(enemy);  
+    },
+    remove : function () 
+	{  
+        this.tabEnemies.map(function(obj,index,array)
+		{
+            if(obj.exists == false ||obj.x >ArenaWidth || obj.x<0)
+			{
+                  delete array[index];
+            }
+        });
+    },
+    draw : function()
+	{ 
+        this.tabEnemies.map(function(obj)
+		{
+            obj.draw();
+        });
+    },
+    clear : function()
+	{
+       this.tabEnemies.map(function(obj)
+	   {
+            obj.clear();
+       });
+    },
+    update : function()
+	{
+
+        this.tabEnemies.map(function(obj)
+		{
+            obj.update();
+        });
+         this.remove();
+    }
+    
+};
+function Enemy(x,y,speed,dir) //dir = 0:horizontal, 1: vertical
+{
+    this.x = x;
+    this.y = y;
+	this.dir = dir;
+    this.xSpeed = (1-dir)*speed;
+	this.ySpeed = dir*speed;
+    this.exists = true;
+    this.height = 30;
+    this.width = 40;
+    this.img = new Image();
+    this.img.src = "./images/eSpritesheet_40x30.png";
+    this.cpt = 0;
+
+    this.cptExplosion =  0;//10 images
+    this.imgExplosion = new Image();
+    this.imgExplosionHeight = 128;
+    this.imgExplosionWidth = 128;
+    this.imgExplosion.src = "./images/explosion.png";
+
+    this.projectileSet = new ProjectileSet();
+    this.explodes = function()
+	{
+        this.cptExplosion = 1;
+    };
+    this.collision = function(tabOfObjects)
+	{
+        var hits = null;
+        var index;
+        for(index in tabOfObjects)
+		{
+            if (this.x < tabOfObjects[index].x + tabOfObjects[index].width 
+				&& this.x + this.width > tabOfObjects[index].x
+				&& this.y < tabOfObjects[index].y + tabOfObjects[index].height 
+				&& this.height + this.y > tabOfObjects[index].y) 
+				{
+                    // collision detected!
+                    hits = tabOfObjects[index];
+                    break;
+				}
+        }
+        return hits;
+    };
+    this.fire = function ()
+	{
+		var xtmp, ytmp;
+		
+		if( this.xSpeed<0 )
+		{
+			xtmp = this.x - 5;
+		}
+		else if( this.xSpeed>0 )
+		{
+			xtmp = this.x + this.width + 5;
+		}
+		else
+		{
+			xtmp = this.x + this.width/2;
+		}
+		if( this.ySpeed<0 )
+		{
+			ytmp = this.y - 5;
+		}
+		else if( this.ySpeed>0 )
+		{
+			ytmp = this.y + this.height + 5;
+		}
+		else
+		{
+			ytmp = this.y + this.height/2;
+		}
+        var tmp;
+		if( this.dir === 0)
+		{	
+			tmp =  new Projectile(1,xtmp,ytmp,this.xSpeed*2,this.ySpeed*2,dir,7,5);
+		}
+		else
+		{
+			tmp =  new Projectile(1,xtmp,ytmp,this.xSpeed*2,this.ySpeed*2,dir,5,7);
+		}
+        this.projectileSet.add(tmp);
+    };
+    this.draw = function()
+	{ 
+        this.projectileSet.draw();
+
+        if(this.cptExplosion!=0)
+		{
+                conArena.drawImage(this.imgExplosion, this.cptExplosion*this.imgExplosionWidth, 0, this.imgExplosionWidth,this.imgExplosionHeight, this.x,this.y,this.width,this.height);
+        }
+		else
+		{
+            conArena.drawImage(this.img,  0,this.cpt*this.height,this.width,this.height, this.x,this.y,this.width,this.height);
+        }
+    };
+    this.clear = function()
+	{
+        if(this.exists)
+		{
+            conArena.clearRect(this.x,this.y,this.width,this.height);
+        }
+        this.projectileSet.clear();
+    };
+    this.update = function()
+	{
+       if(this.cptExplosion==0) //is not exploding
+	   {
+            this.x +=   this.xSpeed ;
+            this.y += this.ySpeed;
+            var tmp = this.collision([player]);
+                if(tmp != null)
+				{
+                    tmp.explodes();
+                    this.exists = false;
+                }
+
+            if(tics % 5 == 1) 
+			{
+                    this.cpt = (this.cpt + 1) % 6;
+            }
+            if(tics % 120 == 1) this.fire();
+       }
+	   else
+	   {
+            if(tics % 3 == 1) 
+			{
+                this.cptExplosion++;
+            }
+            if(this.cptExplosion>10)
+			{//end of animation
+                this.cptExplosion=0;
+                this.exists = false;
+                nbEnemy--;
+            }
+        }
+        this.projectileSet.update();
+    };
+}
+
+
+
+// Hero Player
+var player = {
+    init : function()
+	{
+        this.img = new Image();
+        this.img.src = "./images/doctor.png";
+        this.cpt = 0;
+        this.cptExplosion =  0;//10 images
+        this.imgExplosion = new Image();
+        this.imgExplosionHeight = 128;
+        this.imgExplosionWidth = 128;
+        this.imgExplosion.src = "./images/explosion.png";
+        this.projectileSet = new ProjectileSet();
+    },
+    x : 20,
+	xSpeed : 3,
+    y : 100,
+	ySpeed : 3,
+    height : 50,
+    width : 30,
+    nbOfLives : 5,
+    timeToBeAlive : 0,
+	
+	dir : 1,
+	spriteLine : 0,
+	spriteColumn : 0,
+	spriteHeight : 48,
+	spriteWidth : 32,	
+	
+	xShootSpeed : 0,
+	yShootSpeed :   6,
+	pastShoot : 0,
+	
+	isWalking : false,
+	
+    fires : function()
+	{
+		var tmp;
+		switch(this.spriteLine)
+		{
+			case 0:	//down
+				tmp = new Projectile(0,this.x,this.y+this.height,this.xShootSpeed,this.yShootSpeed,this.dir,10,6);
+				break;
+			case 1:	//left
+				tmp = new Projectile(0,this.x,this.y+this.height/2,this.xShootSpeed,this.yShootSpeed,this.dir,6,10);
+				break;
+			case 2:	//right
+				tmp = new Projectile(0,this.x+this.width,this.y+this.height/2,this.xShootSpeed,this.yShootSpeed,this.dir,6,10);
+				break;
+			case 3: //up
+				tmp = new Projectile(0,this.x+this.width-5,this.y,this.xShootSpeed,this.yShootSpeed,this.dir,10,6);
+				break;			
+		}
+        this.projectileSet.add(tmp);
+    },
+    explodes : function()
+	{
+        if(this.timeToBeAlive == 0) 
+		{
+            this.nbOfLives--;
+            if(this.nbOfLives>0)
+			{
+                this.timeToBeAlive = _timeToBeAlive;
+                this.cptExplosion = 1;
+            }
+			else
+			{
+                //Game Over
+                console.log("GAME OVER");
+            }
+        }
+    },
+
+    clear : function()
+	{
+        conArena.clearRect(this.x,this.y,this.width,this.height);
+        this.projectileSet.clear();
+    },
+    update :  function()
+	{
+        var keycode;
+		
+		if( this.pastShoot>0)
+		{
+			this.pastShoot--;
+		}
+		
+        if(this.timeToBeAlive>0) 
+		{
+            this.timeToBeAlive --; 
+        }
+		else
+		{
+			key = tab[0];
+
+			if( key!= 0)
+			{
+				this.isWalking = true;
+			}
+			
+			//	THE down-arrow KEY
+			if (key == 40) 
+			{
+				if( this.y< (ArenaHeight-this.height-this.ySpeed))
+				{
+					this.y = this.y + this.ySpeed;
+				}
+				else if( this.y<(ArenaHeight-this.height) )
+				{
+					this.y = (ArenaHeight-this.height-1);
+				}
+				this.spriteLine = 0;
+				this.dir = 1;
+				this.xShootSpeed = 0;
+				this.yShootSpeed = 8;
+			}	
+			//	THE up-arrow KEY
+			if (key == 38) 
+			{
+				if( this.y>43)
+				{
+					this.y = this.y - this.ySpeed;
+				}
+				else if ( this.y>33 )
+				{
+					this.y = 34;
+				}
+				this.spriteLine = 3;
+				this.dir = 1;
+				this.xShootSpeed = 0;
+				this.yShootSpeed = -8;
+			}
+			//	THE left-arrow KEY
+			if (key == 37) 
+			{
+				if( this.x>this.xSpeed)
+				{
+					this.x = this.x-this.xSpeed;
+				}
+				else if( this.x>0)
+				{
+					this.x = 1;
+				}
+				this.spriteLine = 1;
+				this.dir = 0;
+				this.xShootSpeed = -8;
+				this.yShootSpeed = 0;
+			}
+			//	THE right-arrow KEY
+			if (key == 39) 
+			{
+				if(this.x< (ArenaWidth-this.width-this.xSpeed))
+				{
+					this.x = this.x + this.xSpeed;
+				}
+				else if(this.x< (ArenaWidth-this.width))
+				{
+					this.x = (ArenaWidth-this.width-1);
+				}
+				this.spriteLine = 2;
+				this.dir = 0;
+				this.xShootSpeed = 8;
+				this.yShootSpeed = 0;
+			}
+			
+			if(key != 0 && this.isWalking)	//si on marche et que l'on continue de marcher
+			{
+				if(tics % 8 == 1) 
+				{
+					this.spriteColumn = (this.spriteColumn+1)%4;
+				}
+			}
+			else
+			{
+				if(this.isWalking)	//si on était en train de marcher et qu'il n'y a plus de déplacement demandé, on arrête la marche et on affiche le personnage en position de "non-marche"
+				{
+					this.isWalking = false;
+					this.spriteColumn = 0;
+				}
+			}	
+			
+			if(space)
+			{
+				if(this.pastShoot===0)
+				{
+					this.fires();
+					this.pastShoot = 50;
+				}                
+            }
+            else	//si l'utilisateur a relaché la barre d'espace
+            {
+            	this.pastShoot = 0;
+            }
+
+        }
+        this.projectileSet.update();
+    },
+    draw : function()
+	{
+        if(this.timeToBeAlive == 0) 
+		{
+            conArena.drawImage(this.img, this.spriteColumn*this.spriteWidth,this.spriteLine*this.spriteHeight,this.spriteWidth,this.spriteHeight, this.x,this.y,this.width,this.height);
+            this.cptExplosion=0;
+        }
+		else
+		{
+            //exploding
+            if(this.cptExplosion!=0)
+			{
+               conArena.drawImage(this.imgExplosion, this.cptExplosion*this.imgExplosionWidth, 0, this.imgExplosionWidth,this.imgExplosionHeight, this.x,this.y,this.width,this.height);
+               	if(tics % 3 == 1) 
+			   	{
+				   this.cptExplosion = (this.cptExplosion+1)%10;
+				}
+            }
+        }
+        this.projectileSet.draw();
+    }
+};
+/*
+function updateScene() {
+    "use strict"; 
+    xBackgroundOffset = (xBackgroundOffset - xBackgroundSpeed) % backgroundWidth;
+}
+
+function drawScene() {
+    "use strict"; 
+    canArena.style.backgroundPosition = xBackgroundOffset + "px 0px" ;
+}
+
+function clearScore() {
+    conScore.clearRect(0,0,300,50);
+}
+function drawScore() {
+    conScore.fillText("life : "+player.nbOfLives, 10, 25);
+    conScore.fillText("score : "+player.projectileSet.score, 150,25);
+}
+*/
+function updateItems() 
+{
+    player.update();
+    tics++;
+    if(tics % 100 == 1 && nbEnemy<10) 
+	{
+		var randx = Math.floor(Math.random() * (ArenaWidth-40));
+        var randy = Math.floor(Math.random() * (ArenaHeight-30));
+		
+		var randSpeed = evalSpeed(0);
+
+		
+		var dir = Math.floor(Math.random()*2);
+		
+        enemies.add(new Enemy(randx, randy,randSpeed,dir));
+        nbEnemy++;
+    }
+    enemies.update();
+}
+
+function drawItems()
+{
+    player.draw();
+    enemies.draw();
+}
+
+function clearItems() 
+{
+    player.clear(); 
+    enemies.clear();
+}
+
+function updateGame() 
+{
+    updateItems();
+}
+function clearGame() 
+{
+    clearItems();
+}
+function drawGame() 
+{
+    drawItems();    
+}
+function mainloop () 
+{
+    clearGame();
+    updateGame();
+    drawGame();
+}
+
+function recursiveAnim () 
+{ 
+    mainloop();
+    animFrame( recursiveAnim );
+}
+
+function init() 
+{
+	for(var i=0; i<4;i++)
+	{
+		tab[i]=0;
+	}
+	
+    divArena = document.getElementById("canContainer");
+    canArena = document.createElement("canvas");
+    canArena.setAttribute("id", "canArena");
+    canArena.setAttribute("height", ArenaHeight);
+    canArena.setAttribute("width", ArenaWidth);
+    conArena = canArena.getContext("2d");
+    divArena.appendChild(canArena);
+ 
+    player.init();
+    enemies.init();
+    
+	window.addEventListener("keydown", doKeyDown, false);
+	window.addEventListener("keyup", doKeyUp, false);
+    
+    animFrame( recursiveAnim );
+}
+
+window.addEventListener("load", init, false);
+
+//########################################################################
+//								Son
+//########################################################################
+
+function muteMusic()
+{
+	if (soundGame) 
+	{
+		musicImg.setAttribute('src','images/musicoff.png');
+		audioTrack.volume = 0;
+		soundGame = false;
+	} 
+	else 
+	{
+		musicImg.setAttribute('src','images/musicon.png');
+		audioTrack.volume = 0.4;
+		soundGame = true;
+	}
+	
+}	
+
